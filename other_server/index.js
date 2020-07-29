@@ -1,4 +1,3 @@
-const express = require("express");
 const axios = require("axios");
 const FormData = require("form-data");
 const fs = require("fs");
@@ -6,10 +5,6 @@ const fs = require("fs");
 const interval_upload = 5000;
 const interval_report = interval_upload + 1500;
 let has_uploaded = false;
-
-const headers = {
-  "Content-type": "multipart/form-data",
-};
 
 setInterval(async () => {
   console.log("uploading");
