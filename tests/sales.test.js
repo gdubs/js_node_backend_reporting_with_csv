@@ -4,97 +4,39 @@ const req = supertest(app);
 
 describe("Sales endpoint", () => {
   describe("/record route", () => {
-    let record_res;
-    // let record_validation_res;
+    let record_res, record_validation_res;
     let file = `${__dirname}/to_be_uploaded.csv`;
-    // let file_validation = `${__dirname}/to_be_uploaded_validation.csv`;
+    let file_validation = `${__dirname}/to_be_uploaded_validation.csv`;
 
-    beforeAll(async () => {
+    it("should successfully save csv file data without errors", async () => {
       record_res = await req
         .post("/sales/record")
         .attach("uploaded_file", file);
-
-      // record_validation_res = await req
-      //   .post("/sales/record")
-      //   .attach("uploaded_file", file_validation);
-    });
-
-    it("should successfully save csv file data without errors", async (done) => {
-      record_res = await req
-        .post("/sales/record")
-        .attach("uploaded_file", file);
-      // .expect((res) => {
-      //   const result = JSON.parse(res.text);
-      //   expect(result.body.message).toBe("successfully loaded data");
-      //   done();
-      // });
 
       const res = JSON.parse(record_res.text);
       expect(res.body.message).toBe("successfully loaded data");
-      done();
-    }, 3000);
-
-    // it("should not successfully save csv return validation error", async (done) => {
-    //   // const res = JSON.parse(record_validation_res.text);
-    //   // expect(res.body.message).toBe(
-    //   //   "CSV file has validation errors. Please correct and re upload again"
-    //   // );
-    //   // // expect(res.body.message).toBe("CSV file has validation errors. Please correct and re upload again");
-    //   // done();
-
-    //   record_validation_res = await req
-    //     .post("/sales/record")
-    //     .attach("uploaded_file", file_validation);
-
-    //   const result = JSON.parse(record_validation_res.text);
-    //   expect(res.body.message).toBe(
-    //     "CSV file has validation errors. Please correct and re upload again"
-    //   );
-    //   done();
-    // }, 30000);
-  });
-
-  describe("/report with validation", () => {
-    let record_validation_res;
-    let file_validation = `${__dirname}/to_be_uploaded_validation.csv`;
-
-    // beforeAll(async () => {
-    //   record_validation_res = await req
-    //     .post("/sales/record")
-    //     .attach("uploaded_file", file_validation);
-    // });
-
-    it("should not successfully save csv return validation error", async (done) => {
-      // const res = JSON.parse(record_validation_res.text);
-      // expect(res.body.message).toBe(
-      //   "CSV file has validation errors. Please correct and re upload again"
-      // );
-      // // expect(res.body.message).toBe("CSV file has validation errors. Please correct and re upload again");
-      // done();
-
+    });
+    it("should not successfully save csv return validation error", async () => {
       record_validation_res = await req
         .post("/sales/record")
-        .attach("uploaded_file", file_validation)
-        .expect((res) => {
-          const result = JSON.parse(res.text);
-          expect(res.body.message).toBe(
-            "CSV file has validation errors. Please correct and re upload again"
-          );
-          done();
-        });
+        .attach("uploaded_file", file_validation);
 
-      // const res = JSON.parse(record_validation_res.text);
-      // expect(res.body.message).toBe(
-      //   "CSV file has validation errors. Please correct and re upload again"
-      // );
-
-      // done();
-    }, 30000);
+      const res = JSON.parse(record_validation_res.text);
+      expect(res.body.message).toBe(
+        "CSV file has validation errors. Please correct and re upload again"
+      );
+      expect(res.body.validation_errors[0].validation_errors.length > 0).toBe(
+        true
+      );
+    });
   });
-  describe("/report rooute", () => {
+  describe("/report route", () => {
     it("should load the report", () => {
-      // const res = await req.get("/sales/report");
-      expect(res.body.message).toBe("report!");
+      // const report_request = await req.get("/sales/report");
+      // console.log("loading report");
+      // // console.log(report_request.text);
+      // // const res = JSON.parse(report_request.text);
+      // expect(JSON.parse(report_request.text).body.message).toBe("report!");
     });
   });
 });

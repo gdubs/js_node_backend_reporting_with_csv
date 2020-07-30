@@ -15,58 +15,74 @@ let response_body = {
   },
 };
 
-router.post("/record", upload.single("uploaded_file"), (req, res) => {
-  // console.log("file is");
-  console.log(req.file);
-  let json_data = get_json_from_file(`./${req.file.path}`);
+router.post("/record", upload.single("uploaded_file"), async (req, res) => {
+  let json_data = await get_json_from_csv_file(`./${req.file.path}`);
 
   fs.unlinkSync(`./${req.file.path}`);
-  // const csv_data = req.file.buffer.toString("utf8");
 
   if (json_data.validation_errors.length > 0) {
     response_body.body.message =
       "CSV file has validation errors. Please correct and re upload again";
     response_body.body.validation_errors = json_data.validation_errors;
   } else {
+    fs.writeFileSync(
+      "./saved_files/saved_data.json",
+      JSON.stringify(json_data.sales)
+    );
     response_body.body.message = "successfully loaded data";
   }
 
-  // console.log("sending response");
-  // console.log(response_body);
   res.send(JSON.stringify(response_body));
 });
 
 router.get("/report", (req, res) => {
-  res.send("report!");
+  const saved_data = get_data_from_json_file("/saved_files/saved_data.json");
+  const body = {
+    message: "report!",
+    data: saved_data,
+  };
+
+  res.send(JSON.stringify({ body }));
 });
 
-const get_json_from_file = (file) => {
-  let output = { sales: [], validation_errors: [] };
-  let stream = fs.createReadStream(file);
-  let csv_row_num = 0;
-
-  let csvStream = csv.parse({ headers: true }).on("data", async (row) => {
-    csv_row_num += 1;
-    const validated_row = validate_row({ ...row, csv_row_num });
-
-    if (validated_row.validation_errors.length > 0)
-      output.validation_errors.push(validated_row);
-
-    output.sales.push(row);
+const get_data_from_json_file = (file) => {
+  let output = [];
+  console.log("get_json_from file");
+  fs.readFile(file, (err, data) => {
+    if (err) throw err;
+    output = JSON.parse(data);
   });
-  // .on("end", (count) => console.log(`total ${count} rows`));
-
-  stream.pipe(csvStream);
 
   return output;
+};
+const get_json_from_csv_file = (file) => {
+  let output = { sales: [], validation_errors: [] };
+  let stream = fs.createReadStream(file);
+
+  return new Promise((resolve, reject) => {
+    let csv_row_num = 0;
+
+    let csvStream = csv
+      .parse({ headers: true })
+      .on("data", async (row) => {
+        csv_row_num += 1;
+        const validated_row = validate_row({ ...row, csv_row_num });
+
+        if (validated_row.validation_errors.length > 0)
+          output.validation_errors.push(validated_row);
+
+        output.sales.push(row);
+      })
+      .on("error", reject)
+      .on("end", () => resolve(output));
+
+    stream.pipe(csvStream);
+  });
 };
 
 const validate_row = (csv_row) => {
   let validation_errors = [];
   const { csv_row_num } = csv_row;
-
-  console.log("validate row");
-  // console.log(csv_row);
 
   if (!csv_row["USER_NAME"]) {
     validation_errors.push("Invalid user name");
